@@ -1,6 +1,7 @@
-# Getting Started with Create React App
+visit: https://poc1.whiterriverbay.com
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is a POC of mempool transactions 
+
 
 ## Available Scripts
 
