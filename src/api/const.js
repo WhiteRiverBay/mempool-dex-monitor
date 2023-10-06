@@ -77,6 +77,15 @@ export const TOKENS = {
 
 }
 
+export const getAllSupportedTokenSymbols = () => {
+    // iterator TOKENS, return an array
+    const tokens = [];
+    for (const [key, value] of Object.entries(TOKENS)) {
+        tokens.push(value.symbol);
+    }
+    return tokens;
+}
+
 export const PAIR_TOKENS = {
     '0x7f51c8AaA6B0599aBd16674e2b17FEc7a9f674A1': {
         name: 'Cake-USDT',

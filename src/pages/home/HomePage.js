@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from 'react-i18next';
 import '../../i18n/i18n.js';
 import { shortAddress, formatUnits, conn } from "../../api/dapp.js";
-import { TOKENS, CONTRACTS } from "../../api/const.js";
+import { TOKENS, CONTRACTS, getAllSupportedTokenSymbols } from "../../api/const.js";
 
 import NavBar from "../../components/nav/NavBar";
 
@@ -17,9 +17,11 @@ class PHomePage extends React.Component {
             items: [],
             tab: 0,
             tabs: ['Pending...'],
+            supportTokens: getAllSupportedTokenSymbols(),
         };
         // websocket 
-        this.ws = new WebSocket("ws://localhost:5001/ws");
+        // this.ws = new WebSocket("ws://localhost:5001/ws");
+        this.ws = new WebSocket("ws://mempool.poc.whiteriverbay.com:5001/ws");
         this.init();
     }
 
@@ -63,6 +65,7 @@ class PHomePage extends React.Component {
                     message['token1Info'] = TOKENS[message.data.token1]
                 }
 
+                console.log(message.data)
                 that.setState({
                     items: [message, ...that.state.items],
                 })
@@ -81,6 +84,14 @@ class PHomePage extends React.Component {
     }
 
     render() {
+        const cardStyle = {
+            background: "rgba(255,255,255,0.01)",
+            boxShadow: "inset 0px 0px 20px 0px rgba(255,255,255,0.2)",
+            borderRadius: "12px",
+            border: "1px solid rgba(255,255,255,0.21)",
+            padding: "16px",
+            margin: "16px",
+        }
         return (
             <div>
                 <NavBar i18n={this.props.lang.i18n} />
@@ -88,9 +99,13 @@ class PHomePage extends React.Component {
                     <div style={{
                         maxWidth: '600px',
                     }}>
-                    {this.state.items.map((item) => {
-                        return <ItemCard item={item} lang={this.props.lang} />
-                    })}
+                        <div style={cardStyle}>
+                            Supported symbols by this POC: 
+                            <br/> {this.state.supportTokens.join(', ')}
+                        </div>
+                        {this.state.items.map((item) => {
+                            return <ItemCard item={item} lang={this.props.lang} />
+                        })}
                     </div>
                 </div>
             </div>
@@ -104,7 +119,7 @@ class ItemCard extends React.Component {
         super(props);
         this.props = props;
 
-        
+
 
         // console.log('token0', this.token0Info, 'token1', this.token1Info);
     }
@@ -174,7 +189,7 @@ class ItemCard extends React.Component {
             marginBottom: '8px'
         }
         let show = true
-        if (item.type === 'trade') {
+        if (item.type === 'trade' || (item.type === 'removeLiquidity' && item.data.version === 'v2')) {
             if (!token0Info
                 || !token1Info) {
                 show = false
@@ -191,18 +206,18 @@ class ItemCard extends React.Component {
             show ? <div style={cardStyle}>
                 <div style={cardHeader}>
                     <div style={tagStyle}>{item.type.toUpperCase()}</div>
-                    <div style={{width: '10px'}}></div>
+                    <div style={{ width: '10px' }}></div>
                     <div style={tagStyle}>
                         <a target="_blank" ref="" href={'https://bscscan.com/address/' + item.data.tx.to}>{CONTRACTS[item.data.tx.to].name}</a>
                     </div>
                 </div>
                 <div style={cardBody}>
-                    
+
                     {/* <div style={rowStyle}>
                         <div style={labelStyle}>DESCRIPTION</div>
                     </div> */}
 
-                    {token0Info &&
+                    {token0Info && item.type === 'trade' &&
                         <div style={rowStyle}>
                             <div style={labelStyle}>Input</div>
                             <div>
@@ -210,13 +225,32 @@ class ItemCard extends React.Component {
                             </div>
                         </div>
                     }
-                    {token1Info&& <div style={rowStyle}>
+                    {token1Info && item.type === 'trade' && <div style={rowStyle}>
                         <div style={labelStyle}>Output</div>
                         <div>
                             {formatUnits(item.data.amount1, token1Info.decimals)} {token1Info.symbol}<span style={labelStyle}>({shortAddress(item.data.token1)})</span>
                         </div>
                     </div>
                     }
+
+                    {token0Info && (item.type === 'removeLiquidity' && item.data.version==='v2') &&
+                        <div style={rowStyle}>
+                            <div style={labelStyle}>Token 0</div>
+                            <div>
+                                {formatUnits(item.data.amount0, token0Info.decimals)}  {token0Info.symbol}<span style={labelStyle}>({shortAddress(item.data.token0)})</span>
+                            </div>
+                        </div>
+                    }
+
+                    {token1Info && ( item.type === 'removeLiquidity' && item.data.version === 'v2' )&& <div style={rowStyle}>
+                        <div style={labelStyle}>Token 1</div>
+                        <div>
+                            {formatUnits(item.data.amount1, token1Info.decimals)} {token1Info.symbol}<span style={labelStyle}>({shortAddress(item.data.token1)})</span>
+                        </div>
+                    </div>
+                    }
+
+
 
                     {item.type === 'trade' && <div style={rowStyle}>
                         <div style={labelStyle}>Swap Price</div>
@@ -237,10 +271,10 @@ class ItemCard extends React.Component {
                         <div style={labelStyle}>From</div>
                         <div>
                             <a ref="" href={'https://bscscan.com/address/' + item.data.account} target="_blank">{shortAddress(item.data.account)}</a>
-                             </div>
+                        </div>
                     </div>
 
-                    
+
                     <div style={rowStyle}>
                         <div style={labelStyle}>GAS Price</div>
                         <div>{formatUnits(item.data.tx.gasPrice, 9)} gwei</div>
