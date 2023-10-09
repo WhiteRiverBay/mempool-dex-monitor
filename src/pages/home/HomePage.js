@@ -21,7 +21,7 @@ class PHomePage extends React.Component {
         };
         // websocket 
         // this.ws = new WebSocket("ws://localhost:5001/ws");
-        this.ws = new WebSocket("ws://mempool.poc.whiteriverbay.com:5001/ws");
+        this.ws = new WebSocket("wss://mempool.poc.whiteriverbay.com/ws");
         this.init();
     }
 
